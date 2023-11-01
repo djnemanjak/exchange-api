@@ -1,0 +1,76 @@
+version: "3.8"
+services:
+
+    # PHP service
+    exchange-api:
+        build: .
+        container_name: php-exchange-api
+        restart: unless-stopped
+        tty: true
+        working_dir: /var/www/
+        volumes:
+          - .:/var/www
+        networks:
+            - exchange-api
+
+    # MySQL database service
+    db-exchange-api:
+        image: mysql/mysql-server:8.0.23
+        container_name: mysql-db-exchange-api
+        restart: unless-stopped
+        tty: true
+        ports:
+            - "3306:3306"
+        environment:
+            MYSQL_DATABASE: exchange-api
+            MYSQL_ROOT_PASSWORD: PS1iWCcSKr
+            MYSQL_USER: ea
+            MYSQL_PASSWORD: secret
+            TZ: Europe/Belgrade
+        volumes:
+            - mysqldataea:/var/lib/mysql/
+            - ./docker/mysql/my.cnf:/etc/mysql/my.cnf
+        networks:
+            - exchange-api
+
+    # Nginx service
+    nginx-exchange-api:
+        image: nginx:latest
+        container_name: nginx-exchange-api
+        restart: unless-stopped
+        tty: true
+        ports:
+            - "8000:80"
+        environment:
+            TZ: Europe/Belgrade
+        volumes:
+            - .:/var/www
+            - ./docker/nginx/conf.d:/etc/nginx/conf.d
+        networks:
+            - exchange-api
+
+        # Redis service
+    redis:
+        image: redis:6.2.5
+        command: redis-server --requirepass LkhWOnMvpi
+        container_name: redis-exchange-api
+        restart: unless-stopped
+        tty: true
+        ports:
+            - "6379:6379"
+        volumes:
+            - redisdataea:/data
+        networks:
+            - exchange-api
+
+#Docker Networks
+networks:
+    exchange-api:
+        driver: bridge
+
+#Volumes
+volumes:
+    mysqldataea:
+        driver: local
+    redisdataea:
+        driver: local
